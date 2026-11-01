@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Home messages</title>
+<style>
+  :root{--purple:#3C0049;--lime:#B9FE33;--bg:#E4CCFC;color-scheme:light}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    padding-inline:16px;padding-block:24px;color:var(--purple);
+  }
+  .fitbox{position:relative}
+  .fit{position:absolute;left:0;top:0;width:390px;height:844px;transform-origin:top left}
+  .phone{
+    position:relative;width:390px;height:844px;background:#F8F8F8;
+    border-radius:28px;overflow:hidden;box-shadow:0 8px 20px rgba(60,0,73,.16);
+  }
+  /* The four states sit on top of each other; only the active one is visible.
+     Each state is a 2x picture of the screen, plus an optional animated hand on top. */
+  .state{
+    position:absolute;left:0;top:0;width:390px;height:844px;
+    opacity:0;transition:opacity .25s ease;pointer-events:none;user-select:none;
+  }
+  .state.on{opacity:1}
+  .state .bg{position:absolute;left:0;top:0;width:390px;height:844px;display:block}
+  /* The hand animation has a white background, so it is multiplied onto the white card. */
+  .hand{position:absolute;background-repeat:no-repeat;mix-blend-mode:multiply}
+  /* The green line under the heading is its own layer. It is drawn on from the right (the text is
+     Hebrew) a moment after the screen opens. */
+  .ul{
+    position:absolute;display:block;
+    clip-path:inset(0 0 0 100%);
+    transition:clip-path .6s cubic-bezier(.45,.05,.25,1) .35s;
+  }
+  .ul.draw{clip-path:inset(0 0 0 0)}
+
+  .controls{display:flex;gap:8px;align-items:center}
+  .controls button{
+    font:inherit;font-size:14px;line-height:1;min-width:34px;
+    border:1.5px solid var(--purple);background:#fff;color:var(--purple);
+    border-radius:999px;padding:7px 14px;cursor:pointer;
+  }
+  .controls button[aria-pressed="true"]{background:var(--purple);color:var(--lime)}
+  .controls button:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+
+  @media (prefers-reduced-motion: reduce){ .state,.ul{transition:none} }
+</style>
+</head>
+<body>
+<div class="fitbox" id="fitbox"><div class="fit" id="fit"><div class="phone" id="phone">
+  <!-- 1. heart hands -->
+  <div class="state on" data-label="תפרקו הכל לצ'אט" role="img" aria-label="תפרקו הכל לצ'אט">
+    <img class="bg" src="assets/home-5.webp" alt="" width="390" height="844">
+    <img class="ul" src="assets/ul-5.svg" alt="" style="left:163.33px;top:342.04px;width:148.28px;height:14.56px">
+    <div class="hand" data-sheet="assets/hand-5.webp" data-frames="54" data-cols="9" data-w="141" data-h="69" data-left="124.49" data-top="209.92"></div>
+  </div>
+  <!-- 2. OK hand -->
+  <div class="state" data-label="תנשמו - הכל יסתדר בקרוב!" role="img" aria-label="תנשמו - הכל יסתדר בקרוב!">
+    <img class="bg" src="assets/home-6.webp" alt="" width="390" height="844">
+    <img class="ul" src="assets/ul-6.svg" alt="" style="left:156.31px;top:339.53px;width:95.4px;height:13.44px">
+    <div class="hand" data-sheet="assets/hand-6.webp" data-frames="66" data-cols="9" data-w="109.5" data-h="103.5" data-left="128.7" data-top="196.53"></div>
+  </div>
+  <!-- 3. phone -->
+  <div class="state" data-label="תשלחו לנו תמונה" role="img" aria-label="תשלחו לנו תמונה">
+    <img class="bg" src="assets/home-7.webp" alt="" width="390" height="844">
+    <img class="ul" src="assets/ul-7.svg" alt="" style="left:78.18px;top:341.61px;width:93.22px;height:13.16px">
+    <div class="hand" data-sheet="assets/hand-7.webp" data-frames="54" data-cols="9" data-w="86" data-h="108" data-left="154.87" data-top="185.58"></div>
+  </div>
+  <!-- 4. megaphone -->
+  <div class="state" data-label="תרגישו בנוח להתלונן" role="img" aria-label="תרגישו בנוח להתלונן">
+    <img class="bg" src="assets/home-8.webp" alt="" width="390" height="844">
+    <img class="ul" src="assets/ul-8.svg" alt="" style="left:165.23px;top:340.6px;width:162.57px;height:14.62px">
+    <div class="hand" data-sheet="assets/hand-8.webp" data-frames="54" data-cols="9" data-w="107" data-h="113" data-left="146.16" data-top="184.14"></div>
+  </div>
+</div></div></div>
+<div class="controls" id="controls" role="group" aria-label="Choose message"></div>
+
+<script>
+  // The animations were exported at 25 fps (40 ms per frame). One clock drives the active hand;
+  // it plays once when its screen opens, then holds the last frame. Clicking the active button replays it.
+  const FRAME_MS = 40;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const states = Array.from(document.querySelectorAll('.state'));
+  const controls = document.getElementById('controls');
+  let current = -1, raf = 0;
+
+  // Size and place every hand, and load its sprite sheet.
+  states.forEach(function(s){
+    const h = s.querySelector('.hand');
+    if (!h) return;
+    const w = +h.dataset.w, ht = +h.dataset.h, cols = +h.dataset.cols, n = +h.dataset.frames;
+    const rows = Math.ceil(n / cols);
+    h.style.left = h.dataset.left + 'px'; h.style.top = h.dataset.top + 'px';
+    h.style.width = w + 'px'; h.style.height = ht + 'px';
+    h.style.backgroundImage = 'url(' + h.dataset.sheet + ')';
+    h.style.backgroundSize = (cols * w) + 'px ' + (rows * ht) + 'px';
+    h._put = function(i){
+      h.style.backgroundPosition = (-(i % cols) * w) + 'px ' + (-Math.floor(i / cols) * ht) + 'px';
+    };
+    h._n = n;
+    h._put(reduce ? n - 1 : 0);
+  });
+
+  // Restart the green line: snap it shut without animating, then let it draw on again.
+  function drawLine(i){
+    const u = states[i].querySelector('.ul');
+    if (!u) return;
+    u.classList.remove('draw');
+    u.style.transition = 'none';
+    void u.offsetWidth;
+    u.style.transition = '';
+    u.classList.add('draw');
+  }
+
+  function play(i){
+    cancelAnimationFrame(raf);
+    drawLine(i);
+    const h = states[i].querySelector('.hand');
+    if (!h) return;
+    if (reduce) { h._put(h._n - 1); return; }
+    h._put(0);
+    const t0 = performance.now();
+    (function step(now){
+      const f = Math.floor((now - t0) / FRAME_MS);
+      if (f >= h._n - 1) { h._put(h._n - 1); return; }
+      h._put(f);
+      raf = requestAnimationFrame(step);
+    })(t0);
+  }
+
+  const buttons = states.map(function(s, i){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = String(i + 1);
+    b.setAttribute('aria-label', s.dataset.label);
+    b.addEventListener('click', function(){ show(i); });
+    controls.appendChild(b);
+    return b;
+  });
+
+  function show(i){
+    states.forEach(function(s, j){ s.classList.toggle('on', i === j); });
+    buttons.forEach(function(b, j){ b.setAttribute('aria-pressed', String(i === j)); });
+    current = i;
+    play(i);
+  }
+  show(0);
+  // The presentation page asks for a replay when this screen comes back into view.
+  addEventListener('message', function(e){ if (e.data === 'replay') play(Math.max(current, 0)); });
+
+  function fit(){
+    const k = Math.min(1, (innerWidth - 32) / 390, (innerHeight - 100) / 844);
+    document.getElementById('fit').style.transform = 'scale(' + k + ')';
+    const b = document.getElementById('fitbox');
+    b.style.width = 390 * k + 'px';
+    b.style.height = 844 * k + 'px';
+  }
+  addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>

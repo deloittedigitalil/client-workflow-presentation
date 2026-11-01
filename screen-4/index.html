@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מה צפוי בביקור - פרוטוטייפ</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --chat-bubble: #f1f1f6;
+    --blob: #F5E9FF;
+    --ink: #1E0025;
+    --muted: #4a4553;
+    --accent: #3C0049;
+    --icon-bg: #ffffff;
+    --icon-ink: #3C0049;
+    --lime: #d4f56b;
+    --input-bg: #ffffff;
+    --shadow: 0 4px 14px rgba(59, 10, 77, 0.12);
+    --stage: #E4CCFC;
+  }
+  :root{color-scheme:light}
+
+  /* Brand font from the Figma spec. Put the files in ./fonts; until then the fallback is used. */
+  @font-face { font-family: "SimplerPro"; font-weight: 400; src: local("SimplerPro Regular"), local("SimplerPro-Regular"), url("fonts/SimplerPro-Regular.otf") format("opentype"); }
+  @font-face { font-family: "SimplerPro"; font-weight: 700; src: local("SimplerPro Bold"), local("SimplerPro-Bold"), url("fonts/SimplerPro-Bold.otf") format("opentype"); }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--stage);
+    color: var(--ink);
+    font-family: "SimplerPro", "Rubik", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 50px; /* lines the phone up with the other screens, which have a button row under them */
+  }
+
+  /* Phone frame: a 390x844 mobile app view on desktop; full screen on phones */
+  .device {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(60, 0, 73, 0.16);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Top product cards (context, placeholders) */
+  .cards {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 128px;
+    display: flex;
+    gap: 16px;
+    padding: 58px 20px 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.06);
+    z-index: 0;
+  }
+  .card {
+    width: 66px;
+    height: 66px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, #ffffff, #e6e6ea);
+    flex: 0 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    height: 64px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .icon-plain {
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    padding: 0;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+  }
+  .pill {
+    display: flex;
+    background: var(--chat-bubble);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .pill button {
+    border: 0;
+    background: transparent;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .pill button.on { background: var(--lime); color: #1d1b22; font-weight: 600; }
+
+  /* Scrollable chat area */
+  .chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 58px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: none;
+  }
+  .chat::-webkit-scrollbar { display: none; }
+  .msg-bot-q {
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0;
+    padding: 0 6px;
+  }
+  .msg-user {
+    align-self: flex-end;
+    background: var(--chat-bubble);
+    padding: 10px 16px;
+    border-radius: 18px;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .msg-bot {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--muted);
+    padding: 0 6px;
+  }
+  .msg-bot .dot {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    margin-top: 9px;
+    border-radius: 50%;
+    background: var(--lime);
+  }
+
+  /* The component */
+  /* Figma frame: 390x349. Blob, icons and text are placed in its coordinates. */
+  .expect {
+    position: relative;
+    margin: 12px -18px 0;
+    height: 349px;
+    text-align: center;
+  }
+  .blob {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 390px;
+    height: 349px;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .blob path { fill: var(--blob); }
+  .icons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 390px;
+    height: 349px;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .icon-btn {
+    pointer-events: auto;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-radius: 60px;
+    border: 0;
+    background: var(--icon-bg);
+    color: var(--icon-ink);
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.08);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform .25s ease, background .25s ease, color .25s ease;
+  }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .icon-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  /* Icon animation plays in the same circle as the button */
+  .anim {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translate(0, 0);
+    pointer-events: none;
+  }
+  .anim video {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 55px;
+    height: auto;
+    transform: translate(-50%, -50%);
+  }
+  .icon-btn.pulse { animation: pulse .45s ease; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(59, 10, 77, .45); }
+    100% { box-shadow: 0 0 0 16px rgba(59, 10, 77, 0); }
+  }
+  .icon-btn[aria-pressed="true"] {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .panel {
+    position: absolute;
+    top: 150px;
+    left: 20px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 350px;
+  }
+  .panel h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 28px;
+    color: var(--ink);
+  }
+  .panel .lead {
+    margin: 0;
+    width: 270px;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 120%;
+    color: var(--ink);
+  }
+  .panel .lead:empty { display: none; }
+  .panel .body {
+    margin: 0;
+    width: 270px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    color: var(--ink);
+  }
+  .panel { transition: opacity .2s ease, transform .2s ease; }
+  .panel.fade { opacity: 0; transform: translateY(6px); }
+  .panel.enter { animation: rise .3s ease; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Input bar */
+  .input-wrap {
+    padding: 12px 20px 26px;
+    background: var(--bg);
+  }
+  .input-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--input-bg);
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+    padding: 14px 18px;
+    color: var(--muted);
+  }
+  .input-bar span { flex: 1; font-size: 15px; }
+  .input-bar button {
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .icon-btn, .panel { transition: none; }
+    .icon-btn.pulse, .panel.enter { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="device">
+
+  <div class="cards" aria-hidden="true">
+    <div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div>
+  </div>
+
+  <header>
+    <button class="icon-plain" aria-label="תפריט">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h16M8 16h12"/></svg>
+    </button>
+    <div class="pill" role="tablist">
+      <button role="tab" aria-selected="false">חיפוש</button>
+      <button role="tab" aria-selected="true" class="on">צ'אט</button>
+    </div>
+    <button class="icon-plain" aria-label="פרופיל">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18c1.5-2 3.5-3 5.5-3s4 1 5.5 3"/></svg>
+    </button>
+  </header>
+
+  <section class="chat">
+    <p class="msg-bot-q">הבנתי נכון או שצריך לשנות משהו?</p>
+    <div class="msg-user">מדויק! חפש התאמה</div>
+    <p class="msg-bot"><span class="dot"></span><span>מעולה! אני אוסף עבורך את הפיקסרים הרלוונטיים ודוגמ שהם ישלחו לך הצעות מחיר בהקדם. זמן ממוצע לקבלת הצעה ראשונה הוא כ-15 דק.<br>בינתיים, הנה כמה דברים שיכולים לעניין אותך:</span></p>
+
+    <!-- The component -->
+    <div class="expect" id="expect">
+      <svg class="blob" viewBox="0 0 390 349" aria-hidden="true"><path d="M361.268 88.8531C334.881 54.1173 264.962 38.6812 194.999 40.088C125.036 38.6813 55.1166 54.1173 28.7295 88.8531C-6.23434 134.879 -12.7792 259.889 28.7295 304.047C58.3928 335.602 126.657 349.31 194.999 347.902C263.341 349.31 331.605 335.602 361.268 304.047C402.78 259.885 396.235 134.883 361.268 88.8531Z"/></svg>
+      <div class="icons" id="icons"></div>
+      <div class="panel" id="panel" aria-live="polite">
+        <h2 id="title"></h2>
+        <p class="lead" id="lead"></p>
+        <p class="body" id="body"></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="input-wrap">
+    <div class="input-bar">
+      <button aria-label="הוספה">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <span>המשך שיחה...</span>
+      <button aria-label="הקלטה">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const items = [
+    {
+      key: "info", label: "מידע", x: 56, y: 40,
+      icon: '<circle cx="12" cy="12" r="10"/><circle cx="11.75" cy="6.13" r="1.25" fill="currentColor" stroke="none"/><path d="M10 9.6h2.07v6.28c0 1.1.9 2 2 2h.43"/>',
+      title: "מה צפוי בביקור",
+      lead: "הפיקסר ינתק את המקרר מהחשמל, יאתר את הבעיה ויציע פתרון כולל עלות התיקון הסופית.",
+      body: "רק לאחר האישור שלך הוא יתחיל לעבוד, ובסיום יחזיר את המקרר למקומו ויוודא שהוא עובד."
+    },
+    {
+      key: "crown", label: "יתרונות", x: 114, y: 21,
+      icon: '<path d="M16.56 11.37 22.47 7.04 20.16 19.33H4.34L2.03 7.04 7.94 11.37 12.25 4.5Z"/><path d="M3.56 15.65h17.38"/>',
+      title: "טיפ זהב", lead: "",
+      body: "אם אומרים שצריך למלא גז או להחליף מנוע, בקשו שיבדקו קודם דברים פשוטים יותר — כמו אטם דלת, תרמוסטט, הצטברות קרח או ניקוי אבק מאחור."
+    },
+    {
+      key: "shekel", label: "מחיר", x: 171.97, y: 12,
+      icon: '<path d="M3.5 19V5.79h7.33c2.21 0 4 1.79 4 4v4.09M9.17 10.14v8.09h7.33c2.21 0 4-1.79 4-4V5"/>',
+      title: "עלות משוערת", lead: "",
+      body: "ביקור ואבחון: 250–350 ש״ח. אם ממשיכים לתיקון, לפעמים העלות מתקזזת."
+    },
+    {
+      key: "clock", label: "זמנים", x: 229.97, y: 21,
+      icon: '<circle cx="12.03" cy="11.5" r="10"/><path d="M12.03 5.5v6.1l-3 4.9"/>',
+      title: "משך זמן משוער", lead: "",
+      body: "בדיקה רגילה נמשכת בדרך כלל 30–60 דקות. תיקון בפועל עשוי לקחת יותר זמן."
+    },
+    {
+      key: "smile", label: "שביעות רצון", x: 287.97, y: 40,
+      icon: '<circle cx="12" cy="12" r="9.57"/><path d="M16.69 13.18C16.34 15.91 13.84 17.84 11.1 17.49C8.37 17.14 6.44 14.64 6.79 11.91"/><circle cx="8.87" cy="8.02" r="1.01" fill="currentColor" stroke="none"/><circle cx="13.51" cy="9.95" r="1.01" fill="currentColor" stroke="none"/>',
+      title: "כמה סוכר?", lead: "",
+      body: "מחקרים קובעים: הכנת כוס קפה לפיקסר מעלה דרמטית את יעילות התיקון ואת מצב הרוח הכללי :)"
+    }
+  ];
+
+  const iconsEl = document.getElementById("icons");
+  const panel = document.getElementById("panel");
+  const titleEl = document.getElementById("title");
+  const leadEl = document.getElementById("lead");
+  const bodyEl = document.getElementById("body");
+  const buttons = [];
+
+  items.forEach((item) => {
+    const btn = document.createElement("button");
+    btn.className = "icon-btn";
+    btn.setAttribute("aria-label", item.label);
+    btn.setAttribute("aria-pressed", "false");
+    btn.style.left = item.x + "px";
+    btn.style.top = item.y + "px";
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + item.icon + "</svg>";
+    btn.addEventListener("click", () => select(item.key));
+    iconsEl.appendChild(btn);
+    buttons.push({ key: item.key, el: btn });
+  });
+
+  function render(item) {
+    titleEl.textContent = item.title;
+    leadEl.textContent = item.lead;
+    bodyEl.textContent = item.body;
+  }
+
+  // Animation files exported from the design, one per icon
+  // Icon animations, embedded so the page works as a single file
+  const videoFiles = {
+    info: "assets/info.mp4",
+    crown: "assets/crown.mp4",
+    shekel: "assets/shekel.mp4",
+    clock: "assets/clock.mp4",
+    smile: "assets/smile.mp4"
+  };
+  let currentKey = "info";
+  const ANIM_SPEED = 0.75; // 1 = original speed; 0.75 = three quarters speed
+
+  // Plays the icon's animation over its circle, then calls done()
+  function playIconAnimation(key, btn, done) {
+    const wrap = document.createElement("div");
+    wrap.className = "anim";
+    wrap.style.left = btn.style.left;
+    wrap.style.top = btn.style.top;
+    const video = document.createElement("video");
+    video.src = videoFiles[key];
+    video.muted = true;
+    video.playsInline = true;
+    video.playbackRate = ANIM_SPEED;
+    wrap.appendChild(video);
+    iconsEl.appendChild(wrap);
+    btn.style.visibility = "hidden";
+
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      wrap.remove();
+      btn.style.visibility = "";
+      done();
+    };
+    video.addEventListener("ended", finish);
+    video.addEventListener("error", finish);
+    setTimeout(finish, 1000 / ANIM_SPEED + 500); // fallback if the video never plays
+    video.play().catch(finish);
+  }
+
+  function select(key) {
+    if (key === currentKey) return;
+    const item = items.find((i) => i.key === key);
+    const btn = buttons.find((b) => b.key === key).el;
+
+    // The previous icon loses its purple fill as soon as the new one is clicked
+    buttons.forEach((b) => {
+      b.el.setAttribute("aria-pressed", String(b.key === key));
+    });
+    // The text changes on the click itself, while the icon animation plays
+    render(item);
+    panel.classList.remove("enter");
+    void panel.offsetWidth; // restart the animation
+    panel.classList.add("enter");
+
+    playIconAnimation(key, btn, () => {
+      currentKey = key;
+    });
+  }
+
+  render(items[0]);
+  buttons[0].el.setAttribute("aria-pressed", "true");
+</script>
+</body>
+</html>
+
+</body></html>

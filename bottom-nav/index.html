@@ -1,0 +1,83 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>אנימציות ניווט תחתון</title>
+<style>
+:root{--purple:#3C0049;--lime:#B9FE33;--bg:#E4CCFC}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding-inline:16px;padding-block:24px;color:var(--purple)}
+.fit{width:390px;height:844px;transform-origin:top left}
+.fitbox{position:relative;direction:ltr}.fit{position:absolute;left:0;top:0}
+.phone{width:390px;height:844px;background:#f8f8f8;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1b1b1f,0 10px 22px rgba(60,0,73,.28)}
+.screen{position:absolute;inset:0 0 auto 0;height:727.5px;background-size:100% 100%;opacity:0;transition:opacity .22s ease}
+.screen.on{opacity:1}
+nav{position:absolute;bottom:0;inset-inline:0;height:116.5px;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 -4px 20px rgba(212,169,251,.35);display:flex;direction:rtl;justify-content:space-around;padding:0 0 0 0;z-index:2}
+.tab{width:90px;height:90px;margin-top:4px;position:relative;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tab .l{position:absolute;inset:0;background-repeat:no-repeat;background-size:auto 100%;background-position:0 0}
+.tab .rest{opacity:1;transition:opacity .2s}
+.tab .play{opacity:0}
+.tab.active .rest{opacity:0;transition:none}
+.tab.active .play{opacity:1}
+.tab:focus-visible{outline:2px solid var(--purple);border-radius:16px}
+.controls{display:flex;gap:8px;align-items:center;font-size:14px}
+.controls button{font:inherit;border:1.5px solid var(--purple);background:#fff;color:var(--purple);border-radius:999px;padding:6px 14px;cursor:pointer}
+.controls button.sel{background:var(--purple);color:var(--lime)}
+</style>
+
+<div class="fitbox" id="fitbox"><div class="fit" id="fit"><div class="phone" id="phone">
+  <div class="screen on" data-s="home" style="background-image:url(assets/screen-home.jpg)"></div>
+  <div class="screen" data-s="inquiries" style="background-image:url(assets/screen-inquiries.jpg)"></div>
+  <div class="screen" data-s="opportunities" style="background-image:url(assets/screen-opportunities.jpg)"></div>
+  <div class="screen" data-s="jobs" style="background-image:url(assets/screen-jobs.jpg)"></div>
+  <nav id="nav" aria-label="ניווט ראשי"></nav>
+</div></div></div>
+<div class="controls" id="speed"><span>מהירות:</span>
+  <button data-v="1" class="sel">רגילה</button><button data-v="1.25">x1.25</button><button data-v="1.5">x1.5</button>
+</div>
+<script>
+function fit(){const k=Math.min(1,(innerWidth-40)/390,(innerHeight-110)/844),f=document.getElementById('fit'),b=document.getElementById('fitbox');f.style.transform=`scale(${k})`;b.style.height=844*k+'px';b.style.width=390*k+'px';f.style.marginInlineStart='0'}
+addEventListener('resize',fit);
+const META={"home": {"frames": 46, "durations": [30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 60, 40]}, "inquiries": {"frames": 21, "durations": [100, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40]}, "opportunities": {"frames": 33, "durations": [70, 60, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40]}, "jobs": {"frames": 41, "durations": [30, 70, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 30, 30, 40, 60, 70, 30, 40]}};
+const ORDER=['home','inquiries','opportunities','jobs'];
+const LABEL={home:'דף הבית',inquiries:'פניות',opportunities:'הזדמנויות',jobs:'עבודות'};
+const SIZE=90; let speed=1, current='home';
+const nav=document.getElementById('nav'), tabs={};
+function frame(el,n,i){el.style.backgroundPosition=`-${i*SIZE}px 0`;}
+ORDER.forEach(k=>{
+  const m=META[k], b=document.createElement('button');
+  b.className='tab'; b.setAttribute('aria-label',LABEL[k]);
+  const img=`url(assets/${k}.png)`, w=`${m.frames*SIZE}px 90px`;
+  b.innerHTML='<div class="l play"></div><div class="l rest"></div>';
+  const play=b.querySelector('.play'), rest=b.querySelector('.rest');
+  play.style.backgroundImage=img;play.style.backgroundSize=w;
+  rest.style.backgroundImage=`url(assets/${k}-rest.png)`;rest.style.backgroundSize='90px 90px';
+  frame(rest,k,0); frame(play,k,m.frames-1);
+  tabs[k]={b,play,rest,m,raf:0};
+  b.addEventListener('click',()=>select(k));
+  nav.appendChild(b);
+});
+function run(k){
+  const t=tabs[k],d=t.m.durations,total=d.reduce((a,b)=>a+b,0);
+  cancelAnimationFrame(t.raf); const t0=performance.now(); frame(t.play,k,0);
+  (function step(now){
+    let e=(now-t0)*speed,i=0,acc=0;
+    for(;i<d.length;i++){acc+=d[i];if(e<acc)break}
+    if(i>=d.length){frame(t.play,k,d.length-1);return}
+    frame(t.play,k,i); t.raf=requestAnimationFrame(step);
+  })(t0);
+}
+function select(k){
+  if(k!==current){
+    const p=tabs[current]; cancelAnimationFrame(p.raf); p.b.classList.remove('active');
+    document.querySelector(`.screen[data-s="${current}"]`).classList.remove('on');
+    document.querySelector(`.screen[data-s="${k}"]`).classList.add('on');
+    current=k;
+  }
+  tabs[k].b.classList.add('active'); run(k);
+}
+tabs.home.b.classList.add('active');fit();
+document.getElementById('speed').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return; speed=+b.dataset.v;
+  document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('sel',x===b));
+});
+</script>
+
+</body></html>

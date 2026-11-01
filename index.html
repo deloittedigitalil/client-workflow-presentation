@@ -1,0 +1,216 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Workflow Demo Presentation</title>
+<style>
+  /* Layout: one switcher row and a stage that shows one or all three phones.
+     Every phone is rendered at its design size and scaled by one factor (--k) so the
+     whole row fits the window without scrolling. */
+  :root{
+    --bg:#E4CCFC;
+    --surface:#FFFFFF;
+    --fg:#1E0025;
+    --muted:#5E4E66;
+    --purple:#3C0049;
+    --lime:#B9FE33;
+    --line:rgba(60,0,73,.18);
+    --bw:430px;
+    --bh:960px;
+    --pad:14;
+    --k:1;
+    color-scheme:light;
+  }
+  /* Single light look on purpose: the three demos are light, so the page around them is too. */
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    padding-inline:16px;
+    padding-block:20px 24px;
+  }
+  .wrap{ margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+
+  .switch{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;
+  }
+  .switch button{
+    font:inherit; font-size:14px; line-height:1;
+    padding:10px 16px; border-radius:999px; cursor:pointer;
+    border:1.5px solid var(--purple); background:var(--surface); color:var(--purple);
+  }
+  .switch button[aria-pressed="true"]{ background:var(--purple); color:var(--lime); }
+  .switch button:focus-visible{ outline:2px solid var(--purple); outline-offset:2px; }
+
+  .stage{
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start;
+    column-gap:56px; row-gap:40px;
+  }
+  /* A card is exactly as wide as its box, so a long title can never push the phones around;
+     the title wraps inside the card instead. */
+  .card{
+    display:flex; flex-direction:column; gap:12px; min-width:0; flex:none;
+    width:calc((var(--vw) + 2 * var(--pad)) * var(--k) * 1px);
+  }
+  .card[hidden]{ display:none !important; }
+  .card h2{ margin:0; font-size:15px; font-weight:600; line-height:1.4; color:var(--fg); }
+
+  /* Each demo page centres its own phone in a 430px frame, and the phones differ in width (the
+     bottom-nav one has a bezel, the brief one is narrower). So every card is cropped to its phone's
+     visible edges (--vl = phone left edge in the frame, --vw = visible width, --pad = room for the
+     shadow) and nudged up or down (--dy) so all the phone tops line up. The gap between phones is
+     then the same everywhere. The numbers are set per card from its data- attributes in the script. */
+  .box{
+    position:relative; overflow:hidden;
+    width:calc((var(--vw) + 2 * var(--pad)) * var(--k) * 1px); height:calc(var(--bh) * var(--k));
+    background:var(--bg);
+  }
+  .frame{
+    position:absolute; left:calc((var(--pad) - var(--vl)) * var(--k) * 1px); top:calc(var(--dy) * var(--k) * 1px);
+    width:var(--bw); height:var(--bh); border:0;
+    transform:scale(var(--k)); transform-origin:0 0; background:var(--bg);
+  }
+  .card h2{ padding-inline-start:calc(var(--pad) * var(--k) * 1px); }
+
+  @media (prefers-reduced-motion: reduce){
+    .switch button{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="switch" id="switch" aria-label="Choose what to show">
+    <button type="button" data-view="both" aria-pressed="true">All</button>
+    <button type="button" data-view="main" aria-pressed="false">Main screen</button>
+    <button type="button" data-view="nav" aria-pressed="false">Bottom navigation</button>
+    <button type="button" data-view="brief" aria-pressed="false">Brief approval</button>
+    <button type="button" data-view="screen4" aria-pressed="false">What to expect</button>
+    <button type="button" data-view="screen5" aria-pressed="false">Home messages</button>
+  </nav>
+
+  <main class="stage" id="stage" data-view="both">
+    <section class="card" data-part="main" data-vl="20" data-vw="390" data-dy="0.2">
+      <h2>1. Main screen</h2>
+      <div class="box"><iframe class="frame" src="main-screen/index.html" title="Main screen"></iframe></div>
+    </section>
+    <section class="card" data-part="nav" data-vl="10" data-vw="410" data-dy="0.5">
+      <h2>2. Bottom navigation animations</h2>
+      <div class="box"><iframe class="frame" src="bottom-nav/index.html" title="Bottom navigation animations"></iframe></div>
+    </section>
+    <section class="card" data-part="brief" data-vl="35" data-vw="360" data-dy="20.5">
+      <h2>3. Brief approval reveal</h2>
+      <div class="box"><iframe class="frame" src="brief-approval/index.html" title="Brief approval reveal"></iframe></div>
+    </section>
+    <section class="card" data-part="screen4" data-vl="20" data-vw="390" data-dy="-0.5">
+      <h2>4. What to expect at the visit</h2>
+      <div class="box"><iframe class="frame" src="screen-4/index.html" title="What to expect at the visit"></iframe></div>
+    </section>
+    <section class="card" data-part="screen5" data-vl="20" data-vw="390" data-dy="0">
+      <h2>5. Home screen messages</h2>
+      <div class="box"><iframe class="frame" src="screen-5/index.html" title="Home screen messages"></iframe></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const BASE_W = 430, BASE_H = 960;
+  const stage = document.getElementById('stage');
+  const switchEl = document.getElementById('switch');
+  const buttons = document.querySelectorAll('.switch button');
+  const parts = document.querySelectorAll('.card');
+  const mainCard = document.querySelector('[data-part="main"]');
+  const s5Card = document.querySelector('[data-part="screen5"]');
+  const views = ['both', 'main', 'nav', 'brief', 'screen4', 'screen5'];
+
+  // Crop and nudge numbers for each card (see the comment above .box in the style block).
+  const PAD = 14;      // room around each phone for its shadow
+  const GAP = 28;      // the space between neighbouring phones, in screen pixels
+  parts.forEach(p => {
+    p.style.setProperty('--vl', p.dataset.vl);
+    p.style.setProperty('--vw', p.dataset.vw);
+    p.style.setProperty('--dy', p.dataset.dy);
+  });
+
+  // One scale for every phone so the row fits the window width and height. The gap between
+  // phones is fixed, so the width needed is  k * (sum of phone widths + 2 * PAD) + (n - 1) * GAP.
+  function fit(){
+    const visible = Array.from(parts).filter(p => !p.hidden);
+    const n = Math.max(1, visible.length);
+    const cs = getComputedStyle(document.body);
+    const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const sumVw = visible.reduce((a, c) => a + Number(c.dataset.vw), 0);
+    const titles = visible.map(c => c.querySelector('h2'));
+    const setK = k => {
+      k = Math.max(0.3, k);
+      document.documentElement.style.setProperty('--k', k.toFixed(4));
+      stage.style.columnGap = Math.max(0, GAP - 2 * PAD * k).toFixed(2) + 'px';
+      // Titles wrap differently at different scales; give them all the height of the tallest one
+      // so every phone starts at the same height.
+      titles.forEach(t => { t.style.minHeight = ''; });
+      const h = Math.max(...titles.map(t => t.offsetHeight));
+      titles.forEach(t => { t.style.minHeight = h + 'px'; });
+      return k;
+    };
+    let k;
+    if (innerWidth < 900) {
+      // Narrow screens: phones stack, so only the width limits the scale.
+      stage.style.flexWrap = 'wrap';
+      const widest = Math.max(...visible.map(c => Number(c.dataset.vw))) + 2 * PAD;
+      k = setK(Math.min(1, (innerWidth - padX) / widest));
+      stage.style.columnGap = '';
+      titles.forEach(t => { t.style.minHeight = ''; });
+    } else {
+      stage.style.flexWrap = 'nowrap';
+      const kw = Math.min(1, (innerWidth - padX - (n - 1) * GAP) / (sumVw + 2 * PAD));
+      // Space above the phones (switcher + title) is measured, not estimated. The title height
+      // depends on the scale, so settle it in a few passes.
+      k = setK(kw);
+      for (let i = 0; i < 3; i++) {
+        const above = visible[0].querySelector('.box').getBoundingClientRect().top + scrollY;
+        const kh = (innerHeight - above - parseFloat(cs.paddingBottom) - 2) / BASE_H;
+        const next = Math.min(kw, kh);
+        if (Math.abs(next - k) < 0.0005) break;
+        k = setK(next);
+      }
+    }
+  }
+
+  function show(view){
+    if(!views.includes(view)) view = 'both';
+    const mainWasHidden = mainCard.hidden;
+    const s5WasHidden = s5Card.hidden;
+    stage.dataset.view = view;
+    parts.forEach(p => { p.hidden = !(view === 'both' || p.dataset.part === view); });
+    buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+    fit();
+    // Replay the logo entrance whenever the main screen comes back into view.
+    if(mainWasHidden && !mainCard.hidden){
+      try { mainCard.querySelector('iframe').contentWindow.postMessage('replay', '*'); } catch (e) {}
+    }
+    // Same for the home messages: replay the hand that is showing when the screen comes back into view.
+    if(s5WasHidden && !s5Card.hidden){
+      try { s5Card.querySelector('iframe').contentWindow.postMessage('replay', '*'); } catch (e) {}
+    }
+    try { history.replaceState(null, '', '#' + view); } catch (e) {}
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+  addEventListener('resize', fit);
+  // Backup for embedded views that do not send resize events: refit when the size changes.
+  let lastW = innerWidth, lastH = innerHeight;
+  setInterval(function(){
+    if (innerWidth !== lastW || innerHeight !== lastH) { lastW = innerWidth; lastH = innerHeight; fit(); }
+  }, 250);
+
+  let start = 'both';
+  try { start = location.hash.replace('#', '') || 'both'; } catch (e) {}
+  show(start);
+</script>
+</body>
+</html>
+
+</body></html>
